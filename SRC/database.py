@@ -20,6 +20,7 @@ class database:
         
         con.close()
         
+        
     @staticmethod
     def clearDB():
         """
@@ -32,6 +33,8 @@ class database:
         
         # res = cur.execute("SELECT name FROM sqlite_master")
         # print(res.fetchone())
+        
+        con.close()
         
         
 # if __name__ == "__main__":
