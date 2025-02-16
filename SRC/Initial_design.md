@@ -47,7 +47,7 @@ This document outlines the architecture of an improved two-factor authentication
 ## Technology Stack
 - **Frontend:** React.js for the login page and pattern input UI.
 - **Backend:** Node.js with Express.js for authentication handling.
-- **Database:** PostgreSQL for storing user credentials and authentication data.
+- **Database:** SQLite for storing user credentials and authentication data.
 - **Mobile App:** Flutter for cross-platform compatibility.
 - **Security:** Argon2 for password hashing, AES for pattern encryption.
 
