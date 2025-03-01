@@ -1,0 +1,59 @@
+# macOS System Files
+.DS_Store
+
+# Swift / Xcode
+*.xcworkspace/
+*.xcuserstate
+*.xcodeproj/*.pbxuser
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+DerivedData/
+Pods/
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+*.hmap
+*.ipa
+*.app
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.env
+.venv
+venv/
+*.log
+
+# React / Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+.env.local
+.env.development
+.env.production
+.env.test
+
+# MySQL Database (Do Not Commit Credentials or Dumps)
+*.sql
+*.sql.gz
+*.dump
+mysql-data/
+.env.mysql  # Store database credentials here, but do not commit!
+
+# Logs & Temp Files
+*.log
+*.tmp
+*.swp
+*.swo
+*.swn
+
+# VS Code Settings (optional)
+.vscode/
+.history/

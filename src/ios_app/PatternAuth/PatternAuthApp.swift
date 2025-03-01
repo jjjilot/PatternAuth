@@ -1,9 +1,7 @@
 //
 //  PatternAuthApp.swift
 //  PatternAuth
-//
-//  Created by Josh on 2/28/25.
-//
+
 
 import SwiftUI
 import SwiftData
