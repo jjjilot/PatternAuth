@@ -19,3 +19,9 @@
 `xcrun simctl install booted ~/Library/Developer/Xcode/DerivedData/PatternAuth*/Build/Products/Debug-iphonesimulator/PatternAuth.app`
 
 The PatternAuth app is now installed on the emulated iPhone 16. Navigate to the rightmost page and click to open it.
+
+### Testing Only
+
+Previous builds may interfere with future changes. Remove all previous builds from DerivedData folder with
+
+`cd ~/Library/Developer/Xcode/DerivedData/; rm -r ./* `
