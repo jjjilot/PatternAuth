@@ -113,7 +113,9 @@ function LoginForm({ onLoginSuccess }) {
 // --- PATTERN LOCK COMPONENT ---
 function PatternLockScreen({ onSuccess }) {
   // Example correct pattern (indices of circles): top-left→top-middle→top-right→middle-right→bottom-right
-  const CORRECT_PATTERN = [0, 1, 2, 5, 8];
+
+
+  const CORRECT_PATTERN = [0, 1, 2, 5, 8];   // <-------- THIS IS THE PATTERN LOOK HERE <------------------
 
   const [pattern, setPattern] = useState([]);
   const [isMouseDown, setIsMouseDown] = useState(false);
