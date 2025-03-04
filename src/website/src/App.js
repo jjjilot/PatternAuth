@@ -16,7 +16,7 @@ function LoginForm({ onLoginSuccess }) {
     }
 
     // Dummy authentication logic
-    if (email === "test@example.com" && password === "password") {
+    if (email === "nwk@uoregon.edu" && password === "neal") {
       onLoginSuccess();
     } else {
       setError("Invalid email or password");
@@ -115,7 +115,7 @@ function PatternLockScreen({ onSuccess }) {
   // Example correct pattern (indices of circles): top-left→top-middle→top-right→middle-right→bottom-right
 
 
-  const CORRECT_PATTERN = [0, 1, 2, 5, 8];   // <-------- THIS IS THE PATTERN LOOK HERE <------------------
+  const CORRECT_PATTERN = [0, 1, 2, 3, 4];   // <-------- THIS IS THE PATTERN LOOK HERE <------------------
 
   const [pattern, setPattern] = useState([]);
   const [isMouseDown, setIsMouseDown] = useState(false);
