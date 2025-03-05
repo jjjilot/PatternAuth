@@ -1,28 +1,46 @@
-from flask import Flask, request, jsonify
+from fastapi import FastAPI, HTTPException
+import sqlite3
+import os
 
-app = Flask(__name__)
+app = FastAPI()
 
-@app.route("/")
-@app.route("/index")
-def index():
-    return "website"    
+# Ensure SQLite database is in a persistent storage path
+DB_PATH = os.getenv("DATABASE_PATH", "patternauth.sqlite3")
 
-# Dummy user credentials (replace with database later)
-VALID_CREDENTIALS = {
-    "user1": "password123",
-    "testuser": "securepass"
-}
+def get_db_connection():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
-@app.route("/login", methods=["POST"])
-def login():
-    data = request.json
-    username = data.get("username")
-    password = data.get("password")
+@app.get("/user/{username}")
+def get_user(username: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT username, password, pattern, status FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+    conn.close()
+    
+    if user:
+        return {
+            "username": user["username"],
+            "password": user["password"],  # Hash passwords before storing
+            "pattern": user["pattern"],
+            "status": bool(user["status"])
+        }
+    raise HTTPException(status_code=404, detail="User not found")
 
-    if username in VALID_CREDENTIALS and VALID_CREDENTIALS[username] == password:
-        return jsonify({"success": True, "message": "Login successful"})
-    else:
-        return jsonify({"success": False, "message": "Invalid credentials"}), 401
+@app.post("/user/")
+def add_user(username: str, password: str, pattern: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO users (username, password, pattern, status) VALUES (?, ?, ?, ?)",
+                       (username, password, pattern, True))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="Username already exists")
+    finally:
+        conn.close()
+    return {"message": "User added successfully"}
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+# Run locally with: uvicorn app:app --host 0.0.0.0 --port 8000
