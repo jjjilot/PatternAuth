@@ -2,3 +2,4 @@ flask
 flask-cors 
 uvicorn
 fastapi
+pydantic
