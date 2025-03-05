@@ -31,3 +31,21 @@ def add_user(user: UserCreate):
     finally:
         conn.close()
     return {"message": "User added successfully"}
+
+# ✅ New Endpoint: Retrieve user info by username
+@app.get("/user/{username}")
+def get_user(username: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT password, pattern, status FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+    conn.close()
+
+    if user:
+        return {
+            "password": user["password"],  # Consider hashing passwords before storing
+            "pattern": user["pattern"],
+            "status": bool(user["status"])  # Convert to a proper boolean
+        }
+    
+    raise HTTPException(status_code=404, detail="User not found")
