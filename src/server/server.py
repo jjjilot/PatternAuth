@@ -22,6 +22,11 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
+class PatternVerifyRequest(BaseModel):
+    username: str
+    pattern: str
+
+
 # Create a table for users
 @app.post("/user/")
 def add_user(user: UserCreate):
@@ -64,3 +69,17 @@ def login(user: UserLogin):
         return {"message": "Login successful"}
     
     raise HTTPException(status_code=401, detail="Invalid username or password")
+
+@app.post("/verify-pattern")
+def verify_pattern(request: PatternVerifyRequest):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT pattern FROM users WHERE username = ?", (request.username,))
+    db_user = cursor.fetchone()
+    conn.close()
+    
+    if db_user and db_user["pattern"] == request.pattern:
+        return {"message": "Pattern verified"}
+    
+    raise HTTPException(status_code=401, detail="Incorrect pattern")
