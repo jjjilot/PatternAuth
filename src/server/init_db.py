@@ -1,6 +1,8 @@
 import sqlite3
 import os
 
+# SECRET_KEY = 2896e0d2905cb49a34bd77ed411792a0
+
 DB_PATH = os.getenv("DATABASE_PATH", "patternauth.sqlite3")
 
 conn = sqlite3.connect(DB_PATH)
