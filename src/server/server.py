@@ -18,6 +18,11 @@ class UserCreate(BaseModel):
     password: str
     pattern: str
 
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+# Create a table for users
 @app.post("/user/")
 def add_user(user: UserCreate):
     with get_db_connection() as conn:  # Use context manager for automatic connection closing
@@ -30,6 +35,7 @@ def add_user(user: UserCreate):
             raise HTTPException(status_code=400, detail="Username already exists")
     return {"message": "User added successfully"}
 
+# Get user details by username
 @app.get("/user/{username}")
 def get_user(username: str):
     with get_db_connection() as conn:  # Use context manager for automatic connection closing
@@ -45,3 +51,16 @@ def get_user(username: str):
         }
     
     raise HTTPException(status_code=404, detail="User not found")
+
+# Login with username and password
+@app.post("/login/")
+def login(user: UserLogin):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT password FROM users WHERE username = ?", (user.username,))
+        db_user = cursor.fetchone()
+
+    if db_user and db_user["password"] == user.password:  # Consider hashing for security
+        return {"message": "Login successful"}
+    
+    raise HTTPException(status_code=401, detail="Invalid username or password")
