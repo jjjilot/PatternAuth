@@ -27,6 +27,10 @@ class PatternVerifyRequest(BaseModel):
     username: str
     pattern: list[int]
 
+class PatternUpdateRequest(BaseModel):
+    username: str
+    pattern: list[int]
+
 # Create a table for users (RUN ONCE)
 def create_table():
     with get_db_connection() as conn:
@@ -98,3 +102,13 @@ def verify_pattern(request: PatternVerifyRequest):
             return {"message": "Pattern verified"}
 
     raise HTTPException(status_code=401, detail="Incorrect pattern")
+
+@app.post("/update-pattern/")
+def update_pattern(request: PatternUpdateRequest):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET pattern = ? WHERE username = ?", (str(request.pattern), request.username))
+        conn.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+    return {"message": "Pattern updated successfully"}
