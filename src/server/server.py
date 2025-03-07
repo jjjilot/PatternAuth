@@ -16,7 +16,7 @@ def get_db_connection():
 class UserCreate(BaseModel):
     username: str
     password: str
-    pattern: str
+    pattern: list[int]
 
 class UserLogin(BaseModel):
     username: str
@@ -24,7 +24,7 @@ class UserLogin(BaseModel):
 
 class PatternVerifyRequest(BaseModel):
     username: str
-    pattern: str
+    pattern: list[int]
 
 
 # Create a table for users
