@@ -64,16 +64,6 @@ struct AuthView: View {
                     .foregroundColor(.red)
                     .padding()
             }
-
-            Button("Reset") {
-                selectedDots.removeAll()
-                currentPath.removeAll()
-                showError = false
-            }
-            .padding()
-            .background(Color.gray)
-            .foregroundColor(.white)
-            .cornerRadius(8)
         }
         .padding()
     }
