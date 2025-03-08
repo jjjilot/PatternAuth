@@ -31,6 +31,11 @@ class PatternUpdateRequest(BaseModel):
     username: str
     pattern: list[int]
 
+
+class WebUserCreate(BaseModel):
+    username: str
+    password: str
+
 # Create a table for users (RUN ONCE)
 def create_table():
     with get_db_connection() as conn:
@@ -113,9 +118,7 @@ def update_pattern(request: PatternUpdateRequest):
             raise HTTPException(status_code=404, detail="User not found")
     return {"message": "Pattern updated successfully"}
 
-class WebUserCreate(BaseModel):
-    username: str
-    password: str
+
     
 @app.post("/add-web-user/")
 def add_user(user: WebUserCreate):
