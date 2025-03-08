@@ -112,3 +112,22 @@ def update_pattern(request: PatternUpdateRequest):
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="User not found")
     return {"message": "Pattern updated successfully"}
+
+class NewUserCreate(BaseModel):
+    email: str
+    password: str
+
+@app.post("/newuser")
+def create_new_user(user: NewUserCreate):
+    if not user.email or not user.password:
+        raise HTTPException(status_code=400, detail="Email and password are required")
+
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO users (email, password) VALUES (?, ?)", 
+                          (user.email, user.password))
+            conn.commit()
+        return {"message": "Account created successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
