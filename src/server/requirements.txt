@@ -3,3 +3,5 @@ flask-cors
 uvicorn
 fastapi
 pydantic
+cryptography
+bcrypt

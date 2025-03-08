@@ -3,21 +3,29 @@ from pydantic import BaseModel
 import sqlite3
 import os
 import json
+import bcrypt
+from cryptography.fernet import Fernet
+
+# Load encryption key from environment variable
+ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
+if not ENCRYPTION_KEY:
+    raise RuntimeError("ENCRYPTION_KEY is not set!")
+
+cipher = Fernet(ENCRYPTION_KEY.encode())
 
 app = FastAPI()
-
 DB_PATH = os.getenv("DATABASE_PATH", "patternauth.sqlite3")
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")  # enable WAL mode to fix concurrency issue
+    conn.execute("PRAGMA journal_mode=WAL")  # Enable WAL mode
     return conn
 
 class UserCreate(BaseModel):
     username: str
     password: str
-    pattern: list[int]  # pattern is list of ints
+    pattern: list[int]
 
 class UserLogin(BaseModel):
     username: str
@@ -31,7 +39,28 @@ class PatternUpdateRequest(BaseModel):
     username: str
     pattern: list[int]
 
-# Create a table for users (RUN ONCE)
+# Hash password
+def hash_password(password: str) -> str:
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode(), salt)
+    return hashed.decode()
+
+# Verify password
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
+
+# Encrypt pattern
+def encrypt_pattern(pattern: list[int]) -> str:
+    pattern_json = json.dumps(pattern)
+    encrypted = cipher.encrypt(pattern_json.encode())
+    return encrypted.decode()
+
+# Decrypt pattern
+def decrypt_pattern(encrypted_pattern: str) -> list[int]:
+    decrypted = cipher.decrypt(encrypted_pattern.encode()).decode()
+    return json.loads(decrypted)
+
+# Create users table
 def create_table():
     with get_db_connection() as conn:
         cursor = conn.cursor()
@@ -40,22 +69,23 @@ def create_table():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
-                pattern TEXT NOT NULL,  -- Stored as JSON string
+                pattern TEXT NOT NULL,
                 status BOOLEAN NOT NULL DEFAULT 1
             )
         """)
         conn.commit()
 
-create_table()  # Ensure the table exists on startup
+create_table()
 
 @app.post("/add-user/")
 def add_user(user: UserCreate):
     with get_db_connection() as conn:
         cursor = conn.cursor()
         try:
-            pattern_json = json.dumps(user.pattern)  # Convert list to JSON string
+            hashed_password = hash_password(user.password)
+            encrypted_pattern = encrypt_pattern(user.pattern)
             cursor.execute("INSERT INTO users (username, password, pattern, status) VALUES (?, ?, ?, ?)",
-                           (user.username, user.password, pattern_json, True))
+                           (user.username, hashed_password, encrypted_pattern, True))
             conn.commit()
         except sqlite3.IntegrityError:
             raise HTTPException(status_code=400, detail="Username already exists")
@@ -70,8 +100,8 @@ def get_user(username: str):
 
     if user:
         return {
-            "password": user["password"],  # Consider hashing passwords before storing
-            "pattern": json.loads(user["pattern"]),  # Convert JSON string back to list
+            "password": user["password"],
+            "pattern": decrypt_pattern(user["pattern"]),
             "status": bool(user["status"])
         }
     
@@ -84,7 +114,7 @@ def login(user: UserLogin):
         cursor.execute("SELECT password FROM users WHERE username = ?", (user.username,))
         db_user = cursor.fetchone()
 
-    if db_user and db_user["password"] == user.password:  # Consider hashing for security
+    if db_user and verify_password(user.password, db_user["password"]):
         return {"message": "Login successful"}
     
     raise HTTPException(status_code=401, detail="Invalid username or password")
@@ -97,7 +127,7 @@ def verify_pattern(request: PatternVerifyRequest):
         db_user = cursor.fetchone()
 
     if db_user:
-        stored_pattern = json.loads(db_user["pattern"])  # Convert JSON string to list
+        stored_pattern = decrypt_pattern(db_user["pattern"])
         if stored_pattern == request.pattern:
             return {"message": "Pattern verified"}
 
@@ -107,7 +137,8 @@ def verify_pattern(request: PatternVerifyRequest):
 def update_pattern(request: PatternUpdateRequest):
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("UPDATE users SET pattern = ? WHERE username = ?", (str(request.pattern), request.username))
+        encrypted_pattern = encrypt_pattern(request.pattern)
+        cursor.execute("UPDATE users SET pattern = ? WHERE username = ?", (encrypted_pattern, request.username))
         conn.commit()
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="User not found")
