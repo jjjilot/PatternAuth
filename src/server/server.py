@@ -157,8 +157,8 @@ def add_user(user: WebUserCreate):
     with get_db_connection() as conn:
         cursor = conn.cursor()
         try:
-            cursor.execute("INSERT INTO users (username, password, status) VALUES (?, ?, ?)",
-                           (user.username, user.password, False))
+            cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)",
+                           (user.username, user.password))
             conn.commit()
         except sqlite3.IntegrityError:
             raise HTTPException(status_code=400, detail="Username already exists")
