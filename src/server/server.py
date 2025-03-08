@@ -5,6 +5,8 @@ import os
 import json
 import bcrypt
 from cryptography.fernet import Fernet
+from fastapi.middleware.cors import CORSMiddleware
+
 
 # Load encryption key from environment variable
 ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
@@ -14,6 +16,15 @@ if not ENCRYPTION_KEY:
 cipher = Fernet(ENCRYPTION_KEY.encode())
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify allowed origins instead of "*"
+    allow_credentials=True,
+    allow_methods=["*"],  # This allows all methods (GET, POST, OPTIONS, etc.)
+    allow_headers=["*"],  # This allows all headers
+)
+
 DB_PATH = os.getenv("DATABASE_PATH", "patternauth.sqlite3")
 
 def get_db_connection():
@@ -39,10 +50,6 @@ class PatternUpdateRequest(BaseModel):
     username: str
     pattern: list[int]
 
-
-class WebUserCreate(BaseModel):
-    username: str
-    password: str
 
 # Create a table for users (RUN ONCE)
 # Hash password
@@ -169,15 +176,3 @@ def update_pattern(request: PatternUpdateRequest):
 
 
     
-@app.post("/add-web-user/")
-def add_user(user: WebUserCreate):
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        try:
-            cursor.execute("INSERT INTO users (username, password, status) VALUES (?, ?, ?)",
-                           (user.username, user.password, False))
-            conn.commit()
-        except sqlite3.IntegrityError:
-            raise HTTPException(status_code=400, detail="Username already exists")
-    return {"message": "User added successfully"}
-
