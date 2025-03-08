@@ -39,6 +39,12 @@ class PatternUpdateRequest(BaseModel):
     username: str
     pattern: list[int]
 
+
+class WebUserCreate(BaseModel):
+    username: str
+    password: str
+
+# Create a table for users (RUN ONCE)
 # Hash password
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
@@ -143,3 +149,18 @@ def update_pattern(request: PatternUpdateRequest):
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="User not found")
     return {"message": "Pattern updated successfully"}
+
+
+    
+@app.post("/add-web-user/")
+def add_user(user: WebUserCreate):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        try:
+            cursor.execute("INSERT INTO users (username, password, status) VALUES (?, ?, ?)",
+                           (user.username, user.password, False))
+            conn.commit()
+        except sqlite3.IntegrityError:
+            raise HTTPException(status_code=400, detail="Username already exists")
+    return {"message": "User added successfully"}
+
