@@ -119,11 +119,9 @@ def add_user(user: UserCreate):
     with get_db_connection() as conn:
         cursor = conn.cursor()
         try:
-            pattern_json = json.dumps(user.pattern)  # Convert list to JSON string
-            cursor.execute("INSERT INTO users (username, password , status) VALUES (?, ?, ?)",
+            cursor.execute("INSERT INTO users (username, password, status) VALUES (?, ?, ?)",
                            (user.username, user.password, False))
             conn.commit()
         except sqlite3.IntegrityError:
             raise HTTPException(status_code=400, detail="Username already exists")
     return {"message": "User added successfully"}
-        raise HTTPException(status_code=500, detail=str(e))
