@@ -91,7 +91,7 @@ def add_user(user: UserCreate):
             hashed_password = hash_password(user.password)
             encrypted_pattern = encrypt_pattern([0,0,0,0,0,0,0,0,0])
             cursor.execute("INSERT INTO users (username, password, pattern, status) VALUES (?, ?, ?, ?)",
-                           (user.username, hashed_password, encrypted_pattern, True))
+                           (user.username, hashed_password, encrypted_pattern, False))
             conn.commit()
         except sqlite3.IntegrityError:
             raise HTTPException(status_code=400, detail="Username already exists")
@@ -143,11 +143,28 @@ def verify_pattern(request: PatternVerifyRequest):
 def update_pattern(request: PatternUpdateRequest):
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        encrypted_pattern = encrypt_pattern(request.pattern)
-        cursor.execute("UPDATE users SET pattern = ? WHERE username = ?", (encrypted_pattern, request.username))
-        conn.commit()
-        if cursor.rowcount == 0:
+        # Retrieve the current encrypted pattern for the user
+        cursor.execute("SELECT pattern FROM users WHERE username = ?", (request.username,))
+        db_user = cursor.fetchone()
+
+        if db_user:
+            # Decrypt the current pattern
+            current_pattern = decrypt_pattern(db_user["pattern"])
+
+            # Check if the new pattern is the same as the old one
+            if current_pattern == request.pattern:
+                raise HTTPException(status_code=400, detail="New pattern cannot be the same as the old pattern")
+
+            # If patterns are different, encrypt the new pattern and update it
+            encrypted_pattern = encrypt_pattern(request.pattern)
+            cursor.execute("UPDATE users SET pattern = ? WHERE username = ?", (encrypted_pattern, request.username))
+            conn.commit()
+
+            if cursor.rowcount == 0:
+                raise HTTPException(status_code=404, detail="User not found")
+        else:
             raise HTTPException(status_code=404, detail="User not found")
+
     return {"message": "Pattern updated successfully"}
 
 
