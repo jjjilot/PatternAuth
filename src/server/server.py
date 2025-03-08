@@ -25,6 +25,7 @@ def get_db_connection():
 class UserCreate(BaseModel):
     username: str
     password: str
+    pattern: list[int]
 
 class UserLogin(BaseModel):
     username: str
@@ -88,8 +89,9 @@ def add_user(user: UserCreate):
         cursor = conn.cursor()
         try:
             hashed_password = hash_password(user.password)
-            cursor.execute("INSERT INTO users (username, password, status) VALUES (?, ?, ?)",
-                           (user.username, hashed_password, True))
+            encrypted_pattern = encrypt_pattern([0,0,0,0,0,0,0,0,0])
+            cursor.execute("INSERT INTO users (username, password, pattern, status) VALUES (?, ?, ?, ?)",
+                           (user.username, hashed_password, encrypted_pattern, True))
             conn.commit()
         except sqlite3.IntegrityError:
             raise HTTPException(status_code=400, detail="Username already exists")
@@ -155,8 +157,8 @@ def add_user(user: WebUserCreate):
     with get_db_connection() as conn:
         cursor = conn.cursor()
         try:
-            cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)",
-                           (user.username, user.password))
+            cursor.execute("INSERT INTO users (username, password, status) VALUES (?, ?, ?)",
+                           (user.username, user.password, False))
             conn.commit()
         except sqlite3.IntegrityError:
             raise HTTPException(status_code=400, detail="Username already exists")
