@@ -113,21 +113,17 @@ def update_pattern(request: PatternUpdateRequest):
             raise HTTPException(status_code=404, detail="User not found")
     return {"message": "Pattern updated successfully"}
 
-class NewUserCreate(BaseModel):
-    email: str
-    password: str
 
-@app.post("/newuser")
-def create_new_user(user: NewUserCreate):
-    if not user.email or not user.password:
-        raise HTTPException(status_code=400, detail="Email and password are required")
-
-    try:
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO users (email, password) VALUES (?, ?)", 
-                          (user.email, user.password))
+@app.post("/add-web-user/")
+def add_user(user: UserCreate):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        try:
+            pattern_json = json.dumps(user.pattern)  # Convert list to JSON string
+            cursor.execute("INSERT INTO users (username, password , status) VALUES (?, ?, ?)",
+                           (user.username, user.password, False))
             conn.commit()
-        return {"message": "Account created successfully"}
-    except Exception as e:
+        except sqlite3.IntegrityError:
+            raise HTTPException(status_code=400, detail="Username already exists")
+    return {"message": "User added successfully"}
         raise HTTPException(status_code=500, detail=str(e))
