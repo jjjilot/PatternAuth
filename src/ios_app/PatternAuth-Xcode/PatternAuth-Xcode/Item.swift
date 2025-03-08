@@ -1,7 +1,9 @@
 //
 //  Item.swift
 //  PatternAuth
-
+//
+//  Created by Josh on 3/2/25.
+//
 
 import Foundation
 import SwiftData
