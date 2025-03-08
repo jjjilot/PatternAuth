@@ -118,7 +118,7 @@ class WebUserCreate(BaseModel):
     password: str
     
 @app.post("/add-web-user/")
-def add_user(user: UserCreate):
+def add_user(user: WebUserCreate):
     with get_db_connection() as conn:
         cursor = conn.cursor()
         try:
