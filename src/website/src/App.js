@@ -989,8 +989,8 @@ function CreateAccountForm({ onAccountCreated }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: toString(email),
-          password: toString(password),
+          username: email,
+          password: password,
           pattern: [0,0,0,0]
         }),
       });
