@@ -17,22 +17,16 @@ cipher = Fernet(ENCRYPTION_KEY.encode())
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # In production, specify allowed origins instead of "*"
-    allow_credentials=True,
-    allow_methods=["*"],  # This allows all methods (GET, POST, OPTIONS, etc.)
-    allow_headers=["*"],  # This allows all headers
-)
-
+# More env variables
 DB_PATH = os.getenv("DATABASE_PATH", "patternauth.sqlite3")
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")  # Enable WAL mode
+    conn.execute("PRAGMA journal_mode=WAL")  # Enable WAL mode (bug fix)
     return conn
 
+# query classes
 class UserCreate(BaseModel):
     username: str
     password: str
@@ -51,7 +45,6 @@ class PatternUpdateRequest(BaseModel):
     pattern: list[int]
 
 
-# Create a table for users (RUN ONCE)
 # Hash password
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
@@ -73,22 +66,6 @@ def decrypt_pattern(encrypted_pattern: str) -> list[int]:
     decrypted = cipher.decrypt(encrypted_pattern.encode()).decode()
     return json.loads(decrypted)
 
-# Create users table
-def create_table():
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                pattern TEXT NOT NULL,
-                status BOOLEAN NOT NULL DEFAULT 1
-            )
-        """)
-        conn.commit()
-
-create_table()
 
 @app.post("/add-user/")
 def add_user(user: UserCreate):
