@@ -1,59 +1,98 @@
 import SwiftUI
+import LocalAuthentication
 
 struct LoginView: View {
     @State private var username: String = ""
     @State private var password: String = ""
     @State private var isAuthenticated: Bool = false
     @State private var showError: Bool = false
-    @State private var showPatternAuth: Bool = false  // Controls full-screen modal
-    @State private var loggedInUsername: String = ""  // Passes username to HomeView
-    @State private var userPattern: [Int] = []  // Stores the user's pattern
+    @State private var showPatternAuth: Bool = false
+    @State private var loggedInUsername: String = ""
+    @State private var userPattern: [Int] = []
+    @State private var isFaceIDAuthenticated: Bool = false
+    @State private var faceIDErrorMessage: String?
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
-                Text("Login")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .padding(.bottom, 10)
+                if isFaceIDAuthenticated {
+                    Text("Login")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .padding(.bottom, 10)
 
-                TextField("Username", text: $username)
-                    .autocapitalization(.none)
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
+                    TextField("Username", text: $username)
+                        .autocapitalization(.none)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
 
-                SecureField("Password", text: $password)
-                    .autocapitalization(.none)
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
+                    SecureField("Password", text: $password)
+                        .autocapitalization(.none)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
 
-                if showError {
-                    Text("Invalid username or password. Please try again.")
-                        .foregroundColor(.red)
-                        .padding(.top, 10)
+                    if showError {
+                        Text("Invalid username or password. Please try again.")
+                            .foregroundColor(.red)
+                            .padding(.top, 10)
+                    }
+
+                    Button(action: authenticateUser) {
+                        Text("Login")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                    }
+                } else {
+                    Text("Authenticating with Face ID...")
+                        .font(.title2)
+                        .foregroundColor(.gray)
                 }
 
-                Button(action: authenticateUser) {
-                    Text("Login")
-                        .frame(maxWidth: .infinity)
+                if let message = faceIDErrorMessage {
+                    Text(message)
+                        .foregroundColor(.red)
                         .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
                 }
             }
             .padding()
-            .fullScreenCover(isPresented: $showPatternAuth) {  // Prevents drag-down dismissal
+            .onAppear(perform: authenticateWithFaceID)
+            .fullScreenCover(isPresented: $showPatternAuth) {
                 AuthView(username: username, isAuthenticated: $isAuthenticated)
             }
             .navigationDestination(isPresented: $isAuthenticated) {
-                HomeView(username: loggedInUsername)  // Pass username to HomeView
+                HomeView(username: loggedInUsername)
             }
         }
     }
 
+    func authenticateWithFaceID() {
+        let context = LAContext()
+        var error: NSError?
+
+        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+            let reason = "Authenticate to proceed to login"
+
+            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
+                DispatchQueue.main.async {
+                    if success {
+                        isFaceIDAuthenticated = true
+                    } else {
+                        faceIDErrorMessage = "Face ID authentication failed. Please try again."
+                    }
+                }
+            }
+        } else {
+            DispatchQueue.main.async {
+                faceIDErrorMessage = "Face ID not available. Please enable it in settings."
+            }
+        }
+    }
+    
     func authenticateUser() {
         guard let url = URL(string: "https://patternauth.onrender.com/login") else {
             print("Invalid URL")
@@ -87,10 +126,8 @@ struct LoginView: View {
             DispatchQueue.main.async {
                 if httpResponse.statusCode == 200 {
                     print("Login successful")
-                    loggedInUsername = username  // Store username for later use in HomeView
+                    loggedInUsername = username
                     showError = false
-
-                    // Check for user pattern after successful login
                     checkUserPattern()
                 } else {
                     print("Login failed: \(httpResponse.statusCode)")
@@ -101,7 +138,7 @@ struct LoginView: View {
     }
 
     struct User: Decodable {
-        let pattern: [Int]  // Directly decoding as an array of integers
+        let pattern: [Int]
     }
 
     func checkUserPattern() {
@@ -131,9 +168,9 @@ struct LoginView: View {
 
                     DispatchQueue.main.async {
                         if user.pattern == [0, 0, 0, 0, 0, 0, 0, 0, 0] {
-                            isAuthenticated = true  // Skip pattern authentication
+                            isAuthenticated = true
                         } else {
-                            showPatternAuth = true  // Show pattern authentication screen
+                            showPatternAuth = true
                         }
                     }
                 } catch {
