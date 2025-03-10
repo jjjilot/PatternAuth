@@ -17,6 +17,14 @@ cipher = Fernet(ENCRYPTION_KEY.encode())
 
 app = FastAPI()
 
+#To get around the issue of an Option call
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify allowed origins instead of "*"
+    allow_credentials=True,
+    allow_methods=["*"],  # This allows all methods (GET, POST, OPTIONS, etc.)
+    allow_headers=["*"],  # This allows all headers
+)
 # More env variables
 DB_PATH = os.getenv("DATABASE_PATH", "patternauth.sqlite3")
 
