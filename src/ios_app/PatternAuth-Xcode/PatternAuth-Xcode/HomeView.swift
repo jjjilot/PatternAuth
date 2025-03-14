@@ -60,9 +60,9 @@ struct HomeView: View {
                         .background(Color.blue)
                         .foregroundColor(.white)
                         .cornerRadius(8)
-                        .opacity((selectedDots.count >= 3 && selectedDots.count <= 9) ? 1.0 : 0.5)
+                        .opacity((selectedDots.count >= 5 && selectedDots.count <= 9) ? 1.0 : 0.5)
                 }
-                .disabled(selectedDots.count < 3)
+                .disabled(selectedDots.count < 5)
                 .padding()
 
                 // Reset Button
