@@ -1,21 +1,21 @@
 # PatternAuth
 
-# Introduction:
-In recent years, password security has become an issue to be addressed by system administrators rather than just by individuals. The methods with which admins ensure the security of their network vary, but often include techniques such as two-factor authentication for passwords (using an app, phone number, or other form of user contact), password expiry, and other approaches that prevent individuals from allowing bad actors to breach the system. The focus of our project is enhancing two-factor authentication to ensure the security of a system with many users. Current solutions are important to the integrity of the systems they protect because they ensure that passwords are complicated enough to be near-impossible to crack and that bad actors need more than just that password to get into the system. Our motivation is not to remove these additional levels of security. However, we will aim to implement them in a way that effectively integrates the three main authentication factors: something you know, something you have, and something you are.
-To address these security methods, our program will protect user logins with all three authentication factors. The use case of our app will be centered around accurately authenticating user login attempts for web pages and other login-based services. The “service” refers to the login-based service that requires authentication, and the “user” refers to the actor that is attempting to log in to the service. Our project objectives are as follows:
-1. Initial service login from user prompts initial pattern input on mobile device to be used in future login attempts.
-2. Upon website login, program runs with user’s website login token (provided by service upon login attempt). User is prompted to open phone app and login with biometric data available to their device.
-3. After successful biometric login, user is prompted to enter pattern associated with their website login token.
-4. Successful login results in affirmative message on desktop app and program return indicating user may be granted successful login to the service.
-5. Unsuccessful logins result in repeat mobile pattern login prompts. Repeated failures result in negative message on desktop app and program return indicating user should not be granted successful login to the service.
-6. User tokens and associated patterns are encrypted and stored in a database for reference in future login attempts.
-These objectives serve as our methodology for final evaluation of the PatternAuth program. While the implementation of these objectives may change, the final goal is for the program to meet all of these requirements, regardless of how it accomplishes them.
-# Deliverables:
-- PatternAuth program taking one input (user token) and giving one output (login success/failure).
-- PatternAuth program satisfies previous project objectives.
-- Video demonstration of PatternAuth functionality and use cases.
-- Final Project Write-Up.
-- Final Project Implementation Presentation
-# Related Work: 
-Pattern-based authentication has also been investigated as a more natural password alternative. Goh et al.1 proposed a system of multiple-factor authentication that combines input of patterns with other authentication factors to provide more security. The work of Goh et al.1 shows that pattern-based authentication minimizes the possibilities of phishing attacks and brute-force attacks while improving usability. In addition, Kim and Lee 2 established that users generate distinct interaction patterns when sketching patterns, implying that using behavioral analysis in pattern-based authentication can provide stronger security against impersonation attacks.
-Dynamic authentication has also been shown to be a key advancement over static security methods. Zhao et al. 3 proposed a two-factor dynamic identity authentication system that dynamically alters authentication credentials to deter reuse by attackers. The work of Zhao et al. 3 demonstrates that credential rotation maximizes security by shortening the time period in which attackers can obtain credentials. Our system advances this work by incorporating a combination of pattern-based authentication and dynamic rotation of credentials, requiring users to adjust their authentication pattern weekly using a mobile application. By combining these methods, our system maximizes security and usability while eliminating threats associated with static passwords and predictable authentication methods.
+### Abstract
+Multi-factor authentication systems are used by many companies with large user bases to ensure user authentication cannot be bypassed. However, these methods are often susceptible to phishing, SIM swapping, and user fatigue attacks. As a solution to these problems, we created PatternAuth, a robust multi-factor authentication system that seeks to combine the merits of graphical pattern authentication with biometric security and dynamic credential revocation. PatternAuth provides a unique solution by combining three fundamental factors of authentication: something the user knows (graphical patterns and passwords), something the user has (a registered phone), and something the user is (FaceID biometry). By capitalizing on weekly mandatory pattern updates via an iOS app secured with biometric authentication, PatternAuth significantly reduces the time frame of potential attacks such as shoulder surfing or credential theft. The implementation of a security pattern as the primary mode of user authentication was inspired by a study conducted by Sun, Wang, and Zheng el al., which demonstrated that patterns can become very secure as their complexity increases. The purpose of developing PatternAuth was to provide users with an experience that is not only less prone to phishing, stolen credentials, and fatigue for the user themselves, but also allows them to rest assured that their important data remains secure and confidential. The project was evaluated against predetermined user experience evaluation criteria discussed in later sections.
+
+### Manual
+The PatternAuth program consists of two user-end installations. To begin, ensure you have navigated to the PatternAuth directory. 
+
+The first installation can be found by navigating to src/website. To initalize the website the dependencies needed are node, npm and npx. Download Node.js onto your machine. If Node.js is downloaded, all three will be installed automatically. You can verify these were downloaded by typing these checks into the terminal. 
+```
+node -v
+npm -v
+npx -v
+```
+To boot up the website cd into the website directory and run these commands. 
+``` 
+src/website
+npm install # (only for first time running website)
+npm start
+```
+The second installation can be found by navigating to src/ios_app. This directory contains a directory with the Ios app source code and a README. To install the Ios app on your phone, you must have access to an Ios device and have downloaded Xcode onto your machine, which requires a Macos machine. To install the PatternAuth app, connect your Ios device to your machine (through wired connection) and follow the directions in the ios_app README.
