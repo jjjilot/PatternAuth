@@ -79,7 +79,7 @@ def has_expired(last_update: str) -> bool:
     if not last_update:
         return True  # If no date exists, force reset
     last_update_dt = datetime.strptime(last_update, "%Y-%m-%d %H:%M:%S")
-    return datetime.now() - last_update_dt > timedelta(days=7)
+    return datetime.now() - last_update_dt > timedelta(minutes=2)
 
 @app.post("/add-user/")
 def add_user(user: UserCreate):
