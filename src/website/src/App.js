@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import PatternResetScreen from './patternResetScreen'; // Path may vary depending on your file structure
 
 // API base URL
 const API_BASE_URL = "https://patternauth.onrender.com";
@@ -9,6 +10,9 @@ function LoginForm({ onLoginSuccess, onCreateAccount }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -183,6 +187,7 @@ function CreateAccountForm({ onAccountCreated }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -470,6 +475,7 @@ function PatternLockScreen({ onSuccess }) {
   const [circlePositions, setCirclePositions] = useState([]);
   const [currentPos, setCurrentPos] = useState({ x: 0, y: 0 });
   const [isVerifying, setIsVerifying] = useState(false);
+  
   
   const gridRef = useRef(null);
   const circleRefs = useRef([]);
@@ -767,6 +773,7 @@ function App() {
   const [showPatternLock, setShowPatternLock] = useState(false);
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [showDownloadInstructions, setShowDownloadInstructions] = useState(false);
+  const [patternResetRequired, setPatternResetRequired] = useState(false);
 
   // Check if user is already logged in from a previous session
   useEffect(() => {
@@ -778,9 +785,57 @@ function App() {
   }, []);
 
   // Called by the Login form when username/password check is successful
-  const handleLoginSuccess = () => {
-    setShowPatternLock(true); // Existing users go to pattern lock for verification
+  const handleLoginSuccess = async () => {
+    const username = sessionStorage.getItem("currentUser");
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/last-update/${username}`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        const lastUpdate = new Date(data.last_pattern_update);
+        // Use minutes instead of days for testing
+        const minutesDifference = Math.floor((new Date() - lastUpdate) / (1000 * 60));
+        if (minutesDifference >= 1) { // 1 minute instead of 7 days
+          setPatternResetRequired(true);
+        } else {
+          setShowPatternLock(true);
+        }
+      } else {
+        setShowPatternLock(true);
+      }
+    } 
+    catch (error) {
+      console.error("Error checking pattern reset status:", error);
+      setShowPatternLock(true);
+    }
   };
+  // const handleLoginSuccess = async () => {
+  //   const username = sessionStorage.getItem("currentUser");
+    
+  //   try {
+  //     // Check if the pattern needs to be reset
+  //     const response = await fetch(`${API_BASE_URL}/last-update/${username}`);
+  //     const data = await response.json();
+      
+  //     if (response.ok) {
+  //       const lastUpdate = new Date(data.last_pattern_update);
+  //       const today = new Date();
+  //       const daysDifference = Math.floor((today - lastUpdate) / (1000 * 60 * 60 * 24));
+  //       if (daysDifference >= 7) {
+  //         setPatternResetRequired(true);
+  //       } else {
+  //         setShowPatternLock(true);
+  //       }
+  //     } else {
+  //       setShowPatternLock(true);
+  //     }
+  //   } 
+  //   catch (error) {
+  //     console.error("Error checking pattern reset status:", error);
+  //     setShowPatternLock(true);
+  //   }
+  // };
 
   // Called when user wants to create a new account
   const handleCreateAccount = () => {
@@ -814,6 +869,10 @@ function App() {
     setShowDownloadInstructions(false);
   };
 
+  const handleBackToLogin = () => {
+    sessionStorage.removeItem("currentUser");
+    setPatternResetRequired(false);
+  };
   // If fully logged in, show success screen
   if (isLoggedIn) {
     return (
@@ -898,6 +957,11 @@ function App() {
   if (showCreateAccount) {
     return <CreateAccountForm onAccountCreated={handleAccountCreated} />;
   }
+
+
+if (patternResetRequired) {
+  return <PatternResetScreen onBackToLogin={handleBackToLogin} />;
+}
 
   // Show download instructions after account creation
   if (showDownloadInstructions) {
