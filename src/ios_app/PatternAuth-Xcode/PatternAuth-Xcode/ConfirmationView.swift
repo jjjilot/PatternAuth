@@ -3,6 +3,7 @@ import SwiftUI
 struct ConfirmationView: View {
     let pattern: [Int]
 
+    // Primary view
     var body: some View {
         VStack {
             Spacer() // Pushes everything down
@@ -34,7 +35,7 @@ struct ConfirmationView: View {
             Spacer() // Pushes everything up
         }
         .padding()
-        .frame(maxHeight: .infinity) // Ensures it takes up all available space
+        .frame(maxHeight: .infinity) // Ensures it takes up all available space (fixing keyboard issue)
     }
 }
 

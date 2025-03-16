@@ -9,8 +9,10 @@ struct HomeView: View {
 
     let dotSize: CGFloat = 60
     let spacing: CGFloat = 40
-    var username: String  // Accept username as a parameter
+    // Store username var
+    var username: String
 
+    // Primary view
     var body: some View {
         NavigationStack {
             VStack {
@@ -52,6 +54,7 @@ struct HomeView: View {
                 .frame(height: 350)
                 .padding(.bottom, 20)
 
+                // Submit button
                 Button(action: {
                     checkAndStorePattern(selectedDots)
                 }) {
@@ -107,6 +110,7 @@ struct HomeView: View {
         return positions
     }
 
+    // Accurately track swipes
     private func nearestDot(to point: CGPoint, from positions: [CGPoint]) -> Int? {
         for (index, position) in positions.enumerated() {
             if hypot(position.x - point.x, position.y - point.y) < dotSize / 2 {
@@ -116,6 +120,7 @@ struct HomeView: View {
         return nil
     }
 
+    // Endpoint stuff (checking value)
     private func checkAndStorePattern(_ newPattern: [Int]) {
         guard let url = URL(string: "https://patternauth.onrender.com/verify-pattern") else {
             print("Invalid URL")
@@ -163,6 +168,7 @@ struct HomeView: View {
         }.resume()
     }
 
+    // More endpoint stuff (storing value)
     private func storePattern(_ pattern: [Int]) {
         guard let url = URL(string: "https://patternauth.onrender.com/update-pattern/") else {
             print("Invalid URL")

@@ -11,6 +11,7 @@ struct AuthView: View {
     let dotSize: CGFloat = 60
     let spacing: CGFloat = 40
 
+    // Primary view
     var body: some View {
         VStack {
             Text("Enter Your Pattern")
@@ -68,6 +69,7 @@ struct AuthView: View {
         .padding()
     }
 
+    // Endpoint stuff (checking pattern)
     private func verifyPattern() {
         guard let url = URL(string: "https://patternauth.onrender.com/verify-pattern") else {
             print("Invalid URL")
@@ -128,6 +130,7 @@ struct AuthView: View {
         return positions
     }
 
+    // Accurately track lines like homeview
     private func nearestDot(to point: CGPoint, from positions: [CGPoint]) -> Int? {
         let detectionRadius: CGFloat = dotSize * 0.75 // Increased detection radius for better swipe registration
         return positions.enumerated()

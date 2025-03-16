@@ -12,6 +12,7 @@ struct LoginView: View {
     @State private var isFaceIDAuthenticated: Bool = false
     @State private var faceIDErrorMessage: String?
 
+    // Initial app screen
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
@@ -70,6 +71,7 @@ struct LoginView: View {
         }
     }
 
+    // Don't let user in until successful FaceID
     func authenticateWithFaceID() {
         let context = LAContext()
         var error: NSError?
@@ -93,6 +95,7 @@ struct LoginView: View {
         }
     }
     
+    // Endpoint stuff (checking user info)
     func authenticateUser() {
         guard let url = URL(string: "https://patternauth.onrender.com/login") else {
             print("Invalid URL")
@@ -141,6 +144,7 @@ struct LoginView: View {
         let pattern: [Int]
     }
 
+    // Endpoint stuff (checking pattern)
     func checkUserPattern() {
         guard let url = URL(string: "https://patternauth.onrender.com/user/\(username)") else {
             print("Invalid URL for pattern check")
