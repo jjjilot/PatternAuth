@@ -286,7 +286,7 @@ def has_expired(last_update: str) -> bool:
     if not last_update:
         return False  # For brand-new user, treat them as "not expired" yet
     last_update_dt = datetime.strptime(last_update, "%Y-%m-%d %H:%M:%S")
-    return (datetime.now() - last_update_dt) > timedelta(days=7)
+    return (datetime.now() - last_update_dt) > timedelta(minutes=1)
 
 # ------------------------------------------------------------------------
 # ROUTES
