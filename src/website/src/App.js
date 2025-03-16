@@ -775,6 +775,10 @@ function App() {
   const [showDownloadInstructions, setShowDownloadInstructions] = useState(false);
   const [patternResetRequired, setPatternResetRequired] = useState(false);
 
+  if (patternResetRequired) {
+  return <PatternResetScreen onBackToLogin={handleBackToLogin} />;
+}
+
   // Check if user is already logged in from a previous session
   useEffect(() => {
     const storedUser = sessionStorage.getItem("currentUser");
@@ -786,30 +790,60 @@ function App() {
 
   // Called by the Login form when username/password check is successful
   const handleLoginSuccess = async () => {
-    const username = sessionStorage.getItem("currentUser");
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/last-update/${username}`);
-      const data = await response.json();
-      
-      if (response.ok) {
-        const lastUpdate = new Date(data.last_pattern_update);
-        // Use minutes instead of days for testing
-        const minutesDifference = Math.floor((new Date() - lastUpdate) / (1000 * 60));
-        if (minutesDifference >= 1) { // 1 minute instead of 7 days
-          setPatternResetRequired(true);
-        } else {
-          setShowPatternLock(true);
-        }
+  const username = sessionStorage.getItem("currentUser");
+
+  try {
+    // Call your new endpoint
+    const response = await fetch(`${API_BASE_URL}/check-pattern-expired/${username}`);
+    const data = await response.json();
+
+    if (response.ok) {
+      if (data.expired) {
+        // If the server says pattern is expired, we show the reset screen
+        setPatternResetRequired(true);
       } else {
+        // Otherwise, proceed to the pattern lock screen (or whichever flow you prefer)
         setShowPatternLock(true);
       }
-    } 
-    catch (error) {
-      console.error("Error checking pattern reset status:", error);
+    } else {
+      // If an error is returned, fallback to pattern lock or show an error
+      console.error("Error from /check-pattern-expired:", data);
       setShowPatternLock(true);
     }
-  };
+  } catch (error) {
+    console.error("Network error calling /check-pattern-expired:", error);
+    // Fallback if something goes wrong
+    setShowPatternLock(true);
+  }
+};
+
+
+  
+  // const handleLoginSuccess = async () => {
+  //   const username = sessionStorage.getItem("currentUser");
+    
+  //   try {
+  //     const response = await fetch(`${API_BASE_URL}/last-update/${username}`);
+  //     const data = await response.json();
+      
+  //     if (response.ok) {
+  //       const lastUpdate = new Date(data.last_pattern_update);
+  //       // Use minutes instead of days for testing
+  //       const minutesDifference = Math.floor((new Date() - lastUpdate) / (1000 * 60));
+  //       if (minutesDifference >= 1) { // 1 minute instead of 7 days
+  //         setPatternResetRequired(true);
+  //       } else {
+  //         setShowPatternLock(true);
+  //       }
+  //     } else {
+  //       setShowPatternLock(true);
+  //     }
+  //   } 
+  //   catch (error) {
+  //     console.error("Error checking pattern reset status:", error);
+  //     setShowPatternLock(true);
+  //   }
+  // };
   // const handleLoginSuccess = async () => {
   //   const username = sessionStorage.getItem("currentUser");
     
@@ -958,10 +992,6 @@ function App() {
     return <CreateAccountForm onAccountCreated={handleAccountCreated} />;
   }
 
-
-if (patternResetRequired) {
-  return <PatternResetScreen onBackToLogin={handleBackToLogin} />;
-}
 
   // Show download instructions after account creation
   if (showDownloadInstructions) {
