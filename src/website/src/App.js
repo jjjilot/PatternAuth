@@ -335,7 +335,7 @@ function CreateAccountForm({ onAccountCreated }) {
               border: "none",
               backgroundColor: "#3a6ea5",
               color: "white",
-              cursor: isLoading ? "default" : "pointer",
+              cursor: "pointer",
               fontSize: "14px",
               fontWeight: "bold",
               transition: "background-color 0.2s",
@@ -549,7 +549,12 @@ function PatternLockScreen({ onSuccess, onResetPatternRequested }) {
   // Modified so if the first circle is 0, we can keep adding 0's
   const handleCircleEnter = (index) => {
     if (isMouseDown) {
-      if (pattern.length > 0 && pattern[0] === 0 && index === 0 && pattern.length < 9) {
+      if (
+        pattern.length > 0 &&
+        pattern[0] === 0 &&
+        index === 0 &&
+        pattern.length < 9
+      ) {
         setPattern((prev) => [...prev, index]);
       } else if (!pattern.includes(index)) {
         setPattern((prev) => [...prev, index]);
@@ -560,7 +565,9 @@ function PatternLockScreen({ onSuccess, onResetPatternRequested }) {
   useEffect(() => {
     const verifyPattern = async () => {
       if (!isMouseDown && pattern.length > 0 && !isVerifying) {
-        // Check if the pattern is exactly [0,0,0,0,0,0,0,0,0]
+        // If you still want to forbid the pattern of all zeros, 
+        // you could remove or comment out the next block:
+        /*
         if (pattern.length === 9 && pattern.every((p) => p === 0)) {
           if (onResetPatternRequested) {
             onResetPatternRequested();
@@ -568,6 +575,7 @@ function PatternLockScreen({ onSuccess, onResetPatternRequested }) {
           setPattern([]);
           return;
         }
+        */
 
         setIsVerifying(true);
         try {
@@ -855,21 +863,17 @@ function App() {
     }
   }, []);
 
-  // -------------------------------
-  // HELPER: check if pattern is all zeros or expired
-  // -------------------------------
+  // ---------------------------------------------------------
+  // HELPER: Now checks if user status is false instead of zeros
+  // ---------------------------------------------------------
   const checkIfPatternResetOrAllZeros = async (username) => {
     try {
-      // 1) Fetch user details to see if pattern is all zeros
+      // 1) Fetch user details
       const userResponse = await fetch(`${API_BASE_URL}/user/${username}`);
       const userData = await userResponse.json();
-  
-      // If the pattern is [0,0,0,0,0,0,0,0,0], force them to reset
-      if (
-        userData.pattern &&
-        userData.pattern.length === 9 &&
-        userData.pattern.every((val) => val === 0)
-      ) {
+
+      // If user status is false, force them to reset
+      if (userData.status === false) {
         setPatternResetRequired(true);
       } else {
         // Otherwise, show the pattern lock
@@ -1002,7 +1006,7 @@ function App() {
     );
   }
 
-  // If pattern was forcibly reset or is all zeros, show reset screen
+  // If pattern was forcibly reset or user status is false, show reset screen
   if (patternResetRequired) {
     return (
       <PatternResetScreen
