@@ -205,7 +205,6 @@
     
 #     raise HTTPException(status_code=404, detail="User not found")
 
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import sqlite3
@@ -216,21 +215,21 @@ from cryptography.fernet import Fernet
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timedelta
 
-# Load encryption key from environment variable
+# ------------------------------------------------------------------------
+# CONFIG & SETUP
+# ------------------------------------------------------------------------
 ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
 if not ENCRYPTION_KEY:
     raise RuntimeError("ENCRYPTION_KEY is not set!")
 
 cipher = Fernet(ENCRYPTION_KEY.encode())
-
 app = FastAPI()
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify allowed origins instead of "*"
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -242,11 +241,15 @@ def get_db_connection():
     conn.execute("PRAGMA journal_mode=WAL")  # Enable WAL mode
     return conn
 
-# Pydantic models
+# ------------------------------------------------------------------------
+# Pydantic Models
+# ------------------------------------------------------------------------
 class UserCreate(BaseModel):
     username: str
     password: str
-    pattern: list[int]
+    # For brand-new users, you can ignore 'pattern' on the phone side
+    # or pass an empty list, because the server sets it to all zero by default.
+    pattern: list[int] = []
 
 class UserLogin(BaseModel):
     username: str
@@ -260,7 +263,9 @@ class PatternUpdateRequest(BaseModel):
     username: str
     pattern: list[int]
 
-# Password hashing
+# ------------------------------------------------------------------------
+# Helper Functions
+# ------------------------------------------------------------------------
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password.encode(), salt)
@@ -269,7 +274,6 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
-# Pattern encryption
 def encrypt_pattern(pattern: list[int]) -> str:
     pattern_json = json.dumps(pattern)
     encrypted = cipher.encrypt(pattern_json.encode())
@@ -279,158 +283,243 @@ def decrypt_pattern(encrypted_pattern: str) -> list[int]:
     decrypted = cipher.decrypt(encrypted_pattern.encode()).decode()
     return json.loads(decrypted)
 
-# Check if 7 days have passed
 def has_expired(last_update: str) -> bool:
     if not last_update:
-        return True  # If no date exists, force status to false
+        # If the user has never updated the pattern, consider them "new"
+        # or you can decide to treat it as expired. It's up to you.
+        return False  # For brand-new user, let's not force expiration.
     last_update_dt = datetime.strptime(last_update, "%Y-%m-%d %H:%M:%S")
-    return datetime.now() - last_update_dt > timedelta(days=7) 
+    return (datetime.now() - last_update_dt) > timedelta(minutes=2)
 
+# ------------------------------------------------------------------------
+# ROUTES
+# ------------------------------------------------------------------------
+
+# ----------------------
+# 1) CREATE NEW USER
+# ----------------------
 @app.post("/add-user/")
 def add_user(user: UserCreate):
+    """
+    Creates a brand-new user with:
+      - hashed password
+      - default pattern of all zeros (9-length)
+      - status = False initially
+      - last_pattern_update = now (so they won't be forced expired immediately)
+    """
     with get_db_connection() as conn:
         cursor = conn.cursor()
         try:
             hashed_password = hash_password(user.password)
-            # Store the user-provided pattern (or an initial pattern if you prefer)
-            encrypted_pattern = encrypt_pattern(user.pattern)
+            # For brand-new users, store an all-zero pattern so the phone knows to set a new one.
+            default_pattern = encrypt_pattern([0,0,0,0,0,0,0,0,0])
             last_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            cursor.execute("""
-                INSERT INTO users (username, password, pattern, status, last_pattern_update) 
+
+            cursor.execute(
+                """
+                INSERT INTO users (username, password, pattern, status, last_pattern_update)
                 VALUES (?, ?, ?, ?, ?)
-            """, (user.username, hashed_password, encrypted_pattern, False, last_update))
+                """,
+                (user.username, hashed_password, default_pattern, False, last_update),
+            )
             conn.commit()
         except sqlite3.IntegrityError:
             raise HTTPException(status_code=400, detail="Username already exists")
     return {"message": "User added successfully"}
 
+# ----------------------
+# 2) GET USER DETAILS
+# ----------------------
 @app.get("/user/{username}")
 def get_user(username: str):
+    """
+    Returns:
+      - password (hashed)
+      - decrypted pattern
+      - status (as bool)
+    
+    If 7 days have passed, sets user.status = False (but does not overwrite pattern).
+    """
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT password, pattern, status, last_pattern_update 
             FROM users WHERE username = ?
-        """, (username,))
+            """,
+            (username,),
+        )
         user = cursor.fetchone()
 
-        if user:
-            last_update = user["last_pattern_update"]
-            if has_expired(last_update):
-                # Instead of resetting the pattern, set user.status = False
-                cursor.execute("""
-                    UPDATE users 
-                    SET status = 0 
-                    WHERE username = ?
-                """, (username,))
-                conn.commit()
-                return {
-                    "password": user["password"],
-                    "pattern": decrypt_pattern(user["pattern"]),  # Keep pattern as is
-                    "status": False
-                }
-            else:
-                # If not expired, just return existing data
-                return {
-                    "password": user["password"],
-                    "pattern": decrypt_pattern(user["pattern"]),
-                    "status": bool(user["status"])
-                }
-    raise HTTPException(status_code=404, detail="User not found")
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
 
+        last_update = user["last_pattern_update"]
+        if has_expired(last_update):
+            # Mark as expired in DB by setting status to False
+            cursor.execute(
+                """
+                UPDATE users
+                SET status = 0
+                WHERE username = ?
+                """,
+                (username,),
+            )
+            conn.commit()
+            return {
+                "password": user["password"],
+                "pattern": decrypt_pattern(user["pattern"]),
+                "status": False,
+            }
+        else:
+            return {
+                "password": user["password"],
+                "pattern": decrypt_pattern(user["pattern"]),
+                "status": bool(user["status"]),
+            }
+
+# ----------------------
+# 3) LOGIN
+# ----------------------
 @app.post("/login/")
 def login(user: UserLogin):
+    """
+    Validates username/password. If more than 7 days since last pattern update, 
+    sets status=False. Otherwise, user remains with same status.
+    """
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT password, last_pattern_update 
             FROM users WHERE username = ?
-        """, (user.username,))
+            """,
+            (user.username,),
+        )
         db_user = cursor.fetchone()
 
-    if db_user and verify_password(user.password, db_user["password"]):
-        last_update = db_user["last_pattern_update"]
-        if has_expired(last_update):
-            # If expired, set status to false (rather than reset pattern)
-            with get_db_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    UPDATE users 
-                    SET status = 0 
-                    WHERE username = ?
-                """, (user.username,))
-                conn.commit()
-            return {"message": "Login successful, but pattern expired; user status set to false."}
+    if not db_user or not verify_password(user.password, db_user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid username or password")
 
-        return {"message": "Login successful"}
-    
-    raise HTTPException(status_code=401, detail="Invalid username or password")
+    # Now check expiration
+    last_update = db_user["last_pattern_update"]
+    if has_expired(last_update):
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE users
+                SET status = 0
+                WHERE username = ?
+                """,
+                (user.username,),
+            )
+            conn.commit()
+        return {"message": "Login successful, but pattern expired; user status set to false."}
 
+    return {"message": "Login successful"}
+
+# ----------------------
+# 4) VERIFY PATTERN
+# ----------------------
 @app.post("/verify-pattern")
 def verify_pattern(request: PatternVerifyRequest):
+    """
+    Checks if the provided pattern exactly matches the stored pattern.
+    """
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT pattern 
-            FROM users 
-            WHERE username = ?
-        """, (request.username,))
+        cursor.execute(
+            """
+            SELECT pattern FROM users WHERE username = ?
+            """,
+            (request.username,),
+        )
         db_user = cursor.fetchone()
 
-    if db_user:
-        stored_pattern = decrypt_pattern(db_user["pattern"])
-        if stored_pattern == request.pattern:
-            return {"message": "Pattern verified"}
-    
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    stored_pattern = decrypt_pattern(db_user["pattern"])
+    if stored_pattern == request.pattern:
+        return {"message": "Pattern verified"}
+
     raise HTTPException(status_code=401, detail="Incorrect pattern")
 
+# ----------------------
+# 5) UPDATE PATTERN
+# ----------------------
 @app.post("/update-pattern/")
 def update_pattern(request: PatternUpdateRequest):
+    """
+    If a user wants to set or change their pattern.
+    - If they have never set a pattern, the current would be all zeros (for new user).
+    - If they do have a pattern, we ensure it's not the same as the old one.
+    - We then update the pattern and last_pattern_update to now.
+    """
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        # Retrieve the current encrypted pattern for the user
-        cursor.execute("""
-            SELECT pattern 
-            FROM users 
+        cursor.execute(
+            """
+            SELECT pattern
+            FROM users
             WHERE username = ?
-        """, (request.username,))
+            """,
+            (request.username,),
+        )
         db_user = cursor.fetchone()
 
-        if db_user:
-            current_pattern = decrypt_pattern(db_user["pattern"])
-            # Check if the new pattern is the same as the old one
-            if current_pattern == request.pattern:
-                raise HTTPException(status_code=400, detail="New pattern cannot be the same as the old pattern")
+        if not db_user:
+            raise HTTPException(status_code=404, detail="User not found")
 
-            # Update pattern
-            encrypted_pattern = encrypt_pattern(request.pattern)
-            new_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            cursor.execute("""
-                UPDATE users 
-                SET pattern = ?, last_pattern_update = ? 
-                WHERE username = ?
-            """, (encrypted_pattern, new_timestamp, request.username))
-            conn.commit()
+        current_pattern = decrypt_pattern(db_user["pattern"])
 
-            if cursor.rowcount == 0:
-                raise HTTPException(status_code=404, detail="User not found")
-        else:
+        # If the user is truly new, their current_pattern might be [0,0,0,0,0,0,0,0,0].
+        # If the pattern is identical, we throw an error:
+        if current_pattern == request.pattern:
+            raise HTTPException(
+                status_code=400, detail="New pattern cannot be the same as the old pattern"
+            )
+
+        encrypted_pattern = encrypt_pattern(request.pattern)
+        new_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        cursor.execute(
+            """
+            UPDATE users
+            SET pattern = ?, last_pattern_update = ?
+            WHERE username = ?
+            """,
+            (encrypted_pattern, new_timestamp, request.username),
+        )
+        conn.commit()
+
+        if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="User not found")
 
     return {"message": "Pattern updated successfully"}
 
+# ----------------------
+# 6) LAST UPDATE
+# ----------------------
 @app.get("/last-update/{username}")
 def get_last_update(username: str):
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT last_pattern_update 
-            FROM users 
+        cursor.execute(
+            """
+            SELECT last_pattern_update
+            FROM users
             WHERE username = ?
-        """, (username,))
+            """,
+            (username,),
+        )
         user = cursor.fetchone()
 
-    if user and user["last_pattern_update"]:
-        return {"username": username, "last_pattern_update": user["last_pattern_update"]}
-    
-    raise HTTPException(status_code=404, detail="User not found")
+    if not user or not user["last_pattern_update"]:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {
+        "username": username,
+        "last_pattern_update": user["last_pattern_update"]
+    }
