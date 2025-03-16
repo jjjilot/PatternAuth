@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import PatternResetScreen from './patternResetScreen'; // Path may vary depending on your file structure
+import PatternResetScreen from "./patternResetScreen"; // Path may vary depending on your file structure
 
 // API base URL
 const API_BASE_URL = "https://patternauth.onrender.com";
@@ -10,9 +10,6 @@ function LoginForm({ onLoginSuccess, onCreateAccount }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
-
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,7 +24,6 @@ function LoginForm({ onLoginSuccess, onCreateAccount }) {
     setError("");
 
     try {
-      // Use the API to verify login credentials
       const response = await fetch(`${API_BASE_URL}/login/`, {
         method: "POST",
         headers: {
@@ -64,14 +60,14 @@ function LoginForm({ onLoginSuccess, onCreateAccount }) {
         justifyContent: "center",
         alignItems: "center",
         height: "100vh",
-        backgroundColor: "#121212", // Dark background
-        color: "#ffffff", // White text
+        backgroundColor: "#121212",
+        color: "#ffffff",
         fontFamily: "'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif",
       }}
     >
       <div
         style={{
-          backgroundColor: "#1e1e1e", // Dark gray card
+          backgroundColor: "#1e1e1e",
           padding: "30px",
           borderRadius: "12px",
           boxShadow: "0px 6px 16px rgba(0,0,0,0.3)",
@@ -81,7 +77,9 @@ function LoginForm({ onLoginSuccess, onCreateAccount }) {
         }}
       >
         <h2 style={{ marginBottom: "20px", color: "#f0f0f0" }}>Login</h2>
-        {error && <p style={{ color: "#ff5555", margin: "10px 0" }}>{error}</p>}
+        {error && (
+          <p style={{ color: "#ff5555", margin: "10px 0" }}>{error}</p>
+        )}
         <form onSubmit={handleSubmit}>
           <input
             type="email"
@@ -126,7 +124,7 @@ function LoginForm({ onLoginSuccess, onCreateAccount }) {
               margin: "16px 0 8px",
               borderRadius: "6px",
               border: "none",
-              backgroundColor: "#3a6ea5", // Darker blue
+              backgroundColor: "#3a6ea5",
               color: "white",
               cursor: isLoading ? "default" : "pointer",
               fontSize: "14px",
@@ -134,8 +132,12 @@ function LoginForm({ onLoginSuccess, onCreateAccount }) {
               transition: "background-color 0.2s",
               opacity: isLoading ? 0.7 : 1,
             }}
-            onMouseOver={(e) => !isLoading && (e.target.style.backgroundColor = "#457ab8")}
-            onMouseOut={(e) => !isLoading && (e.target.style.backgroundColor = "#3a6ea5")}
+            onMouseOver={(e) =>
+              !isLoading && (e.target.style.backgroundColor = "#457ab8")
+            }
+            onMouseOut={(e) =>
+              !isLoading && (e.target.style.backgroundColor = "#3a6ea5")
+            }
           >
             {isLoading ? "Processing..." : "Continue"}
           </button>
@@ -147,7 +149,13 @@ function LoginForm({ onLoginSuccess, onCreateAccount }) {
             paddingTop: "15px",
           }}
         >
-          <p style={{ color: "#aaaaaa", fontSize: "14px", marginBottom: "10px" }}>
+          <p
+            style={{
+              color: "#aaaaaa",
+              fontSize: "14px",
+              marginBottom: "10px",
+            }}
+          >
             Don't have an account?
           </p>
           <button
@@ -187,12 +195,10 @@ function CreateAccountForm({ onAccountCreated }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Simple validation
     if (!email || !password || !confirmPassword) {
       setError("All fields are required");
       return;
@@ -207,7 +213,6 @@ function CreateAccountForm({ onAccountCreated }) {
     setError("");
 
     try {
-      // Use the API to create a new account
       const response = await fetch(`${API_BASE_URL}/add-user/`, {
         method: "POST",
         headers: {
@@ -216,14 +221,14 @@ function CreateAccountForm({ onAccountCreated }) {
         body: JSON.stringify({
           username: email,
           password: password,
-          pattern: [0,0,0,0]
+          // Default pattern, can be fewer than 9 for initial sign-up
+          pattern: [0, 0, 0, 0],
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Store username in session storage for later use
         sessionStorage.setItem("currentUser", email);
         onAccountCreated();
       } else {
@@ -261,8 +266,12 @@ function CreateAccountForm({ onAccountCreated }) {
           border: "1px solid #333333",
         }}
       >
-        <h2 style={{ marginBottom: "20px", color: "#f0f0f0" }}>Create Account</h2>
-        {error && <p style={{ color: "#ff5555", margin: "10px 0" }}>{error}</p>}
+        <h2 style={{ marginBottom: "20px", color: "#f0f0f0" }}>
+          Create Account
+        </h2>
+        {error && (
+          <p style={{ color: "#ff5555", margin: "10px 0" }}>{error}</p>
+        )}
         <form onSubmit={handleSubmit}>
           <input
             type="email"
@@ -332,8 +341,12 @@ function CreateAccountForm({ onAccountCreated }) {
               transition: "background-color 0.2s",
               opacity: isLoading ? 0.7 : 1,
             }}
-            onMouseOver={(e) => !isLoading && (e.target.style.backgroundColor = "#457ab8")}
-            onMouseOut={(e) => !isLoading && (e.target.style.backgroundColor = "#3a6ea5")}
+            onMouseOver={(e) =>
+              !isLoading && (e.target.style.backgroundColor = "#457ab8")
+            }
+            onMouseOut={(e) =>
+              !isLoading && (e.target.style.backgroundColor = "#3a6ea5")
+            }
           >
             {isLoading ? "Processing..." : "Create Account"}
           </button>
@@ -373,7 +386,7 @@ function DownloadInstructionsScreen({ onProceed }) {
         <h2 style={{ marginBottom: "20px", color: "#f0f0f0" }}>
           Account Created Successfully
         </h2>
-        
+
         <div
           style={{
             backgroundColor: "#252525",
@@ -422,11 +435,19 @@ function DownloadInstructionsScreen({ onProceed }) {
             Pattern Auth App
           </h3>
         </div>
-        
-        <p style={{ color: "#aaaaaa", fontSize: "14px", lineHeight: "1.6", marginBottom: "15px" }}>
-          For enhanced security, please download our Pattern Auth App to set up your authentication pattern.
+
+        <p
+          style={{
+            color: "#aaaaaa",
+            fontSize: "14px",
+            lineHeight: "1.6",
+            marginBottom: "15px",
+          }}
+        >
+          For enhanced security, please download our Pattern Auth App to set up
+          your authentication pattern.
         </p>
-        
+
         <ul
           style={{
             textAlign: "left",
@@ -437,11 +458,17 @@ function DownloadInstructionsScreen({ onProceed }) {
             paddingLeft: "20px",
           }}
         >
-          <li style={{ marginBottom: "8px" }}>Install the app on your device</li>
-          <li style={{ marginBottom: "8px" }}>Log in with the username and password you just created</li>
-          <li style={{ marginBottom: "8px" }}>Create your unique pattern lock for secure access</li>
+          <li style={{ marginBottom: "8px" }}>
+            Install the app on your device
+          </li>
+          <li style={{ marginBottom: "8px" }}>
+            Log in with the username and password you just created
+          </li>
+          <li style={{ marginBottom: "8px" }}>
+            Create your unique pattern lock for secure access
+          </li>
         </ul>
-        
+
         <button
           onClick={onProceed}
           style={{
@@ -457,8 +484,12 @@ function DownloadInstructionsScreen({ onProceed }) {
             fontWeight: "bold",
             transition: "background-color 0.2s",
           }}
-          onMouseOver={(e) => (e.target.style.backgroundColor = "#457ab8")}
-          onMouseOut={(e) => (e.target.style.backgroundColor = "#3a6ea5")}
+          onMouseOver={(e) =>
+            (e.target.style.backgroundColor = "#457ab8")
+          }
+          onMouseOut={(e) =>
+            (e.target.style.backgroundColor = "#3a6ea5")
+          }
         >
           I've Downloaded the App
         </button>
@@ -468,39 +499,38 @@ function DownloadInstructionsScreen({ onProceed }) {
 }
 
 // --- PATTERN LOCK COMPONENT ---
-function PatternLockScreen({ onSuccess }) {
+function PatternLockScreen({ onSuccess, onResetPatternRequested }) {
   const [pattern, setPattern] = useState([]);
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [error, setError] = useState("");
   const [circlePositions, setCirclePositions] = useState([]);
   const [currentPos, setCurrentPos] = useState({ x: 0, y: 0 });
   const [isVerifying, setIsVerifying] = useState(false);
-  
-  
+
   const gridRef = useRef(null);
   const circleRefs = useRef([]);
   const username = sessionStorage.getItem("currentUser");
 
-  // Initialize circle refs
   useEffect(() => {
     circleRefs.current = circleRefs.current.slice(0, 9);
   }, []);
 
-  // Update circle positions when they're available
   useEffect(() => {
-    if (circleRefs.current.length === 9 && circleRefs.current.every(ref => ref)) {
-      const positions = circleRefs.current.map(ref => {
+    if (
+      circleRefs.current.length === 9 &&
+      circleRefs.current.every((ref) => ref)
+    ) {
+      const positions = circleRefs.current.map((ref) => {
         const rect = ref.getBoundingClientRect();
         return {
           x: rect.left + rect.width / 2,
-          y: rect.top + rect.height / 2
+          y: rect.top + rect.height / 2,
         };
       });
       setCirclePositions(positions);
     }
   }, [gridRef.current]);
 
-  // Track mouse/touch position
   const handleMouseMove = (e) => {
     if (isMouseDown) {
       setCurrentPos({ x: e.clientX, y: e.clientY });
@@ -509,20 +539,38 @@ function PatternLockScreen({ onSuccess }) {
 
   const handleTouchMove = (e) => {
     if (isMouseDown && e.touches && e.touches[0]) {
-      setCurrentPos({ 
-        x: e.touches[0].clientX, 
-        y: e.touches[0].clientY 
+      setCurrentPos({
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
       });
     }
   };
 
-  // Check the pattern when the user releases the mouse and has drawn something
+  // Modified so if the first circle is 0, we can keep adding 0's
+  const handleCircleEnter = (index) => {
+    if (isMouseDown) {
+      if (pattern.length > 0 && pattern[0] === 0 && index === 0 && pattern.length < 9) {
+        setPattern((prev) => [...prev, index]);
+      } else if (!pattern.includes(index)) {
+        setPattern((prev) => [...prev, index]);
+      }
+    }
+  };
+
   useEffect(() => {
     const verifyPattern = async () => {
       if (!isMouseDown && pattern.length > 0 && !isVerifying) {
+        // Check if the pattern is exactly [0,0,0,0,0,0,0,0,0]
+        if (pattern.length === 9 && pattern.every((p) => p === 0)) {
+          if (onResetPatternRequested) {
+            onResetPatternRequested();
+          }
+          setPattern([]);
+          return;
+        }
+
         setIsVerifying(true);
         try {
-          // Call the /verify-pattern endpoint for pattern verification
           const endpoint = `/verify-pattern/`;
           const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: "POST",
@@ -534,11 +582,11 @@ function PatternLockScreen({ onSuccess }) {
               pattern: pattern,
             }),
           });
-  
+
           const data = await response.json();
-  
+
           if (response.ok) {
-            onSuccess(); // Pattern verified successfully
+            onSuccess();
           } else {
             setError(data.detail || "Incorrect pattern. Try again!");
             setTimeout(() => {
@@ -558,19 +606,9 @@ function PatternLockScreen({ onSuccess }) {
         }
       }
     };
-  
-    verifyPattern();
-  }, [isMouseDown, pattern, onSuccess, username]);
 
-  
-  const handleCircleEnter = (index) => {
-    if (isMouseDown) {
-      // Add the index only if not already in the pattern
-      if (!pattern.includes(index)) {
-        setPattern((prev) => [...prev, index]);
-      }
-    }
-  };
+    verifyPattern();
+  }, [isMouseDown, pattern, onSuccess, onResetPatternRequested, username]);
 
   return (
     <div
@@ -618,7 +656,7 @@ function PatternLockScreen({ onSuccess }) {
             position: "relative",
           }}
         >
-          {/* SVG for drawing lines between dots */}
+          {/* SVG lines to connect circles */}
           <svg
             style={{
               position: "absolute",
@@ -630,7 +668,7 @@ function PatternLockScreen({ onSuccess }) {
               zIndex: 5,
             }}
           >
-            {/* Lines connecting selected circles */}
+            {/* Connect dots in the pattern */}
             {pattern.length > 1 &&
               pattern.slice(0, -1).map((fromIndex, i) => {
                 const toIndex = pattern[i + 1];
@@ -643,10 +681,22 @@ function PatternLockScreen({ onSuccess }) {
                   return (
                     <line
                       key={`line-${i}`}
-                      x1={from.x - gridRef.current.getBoundingClientRect().left}
-                      y1={from.y - gridRef.current.getBoundingClientRect().top}
-                      x2={to.x - gridRef.current.getBoundingClientRect().left}
-                      y2={to.y - gridRef.current.getBoundingClientRect().top}
+                      x1={
+                        from.x -
+                        gridRef.current.getBoundingClientRect().left
+                      }
+                      y1={
+                        from.y -
+                        gridRef.current.getBoundingClientRect().top
+                      }
+                      x2={
+                        to.x -
+                        gridRef.current.getBoundingClientRect().left
+                      }
+                      y2={
+                        to.y -
+                        gridRef.current.getBoundingClientRect().top
+                      }
                       stroke="#3a6ea5"
                       strokeWidth="3"
                       strokeLinecap="round"
@@ -656,19 +706,33 @@ function PatternLockScreen({ onSuccess }) {
                 return null;
               })}
 
-            {/* Line from last selected circle to current mouse position */}
-            {isMouseDown && pattern.length > 0 && circlePositions[pattern[pattern.length - 1]] && (
-              <line
-                x1={circlePositions[pattern[pattern.length - 1]].x - gridRef.current.getBoundingClientRect().left}
-                y1={circlePositions[pattern[pattern.length - 1]].y - gridRef.current.getBoundingClientRect().top}
-                x2={currentPos.x - gridRef.current.getBoundingClientRect().left}
-                y2={currentPos.y - gridRef.current.getBoundingClientRect().top}
-                stroke="#3a6ea5"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeOpacity="0.6"
-              />
-            )}
+            {/* Show line from last circle to current cursor */}
+            {isMouseDown &&
+              pattern.length > 0 &&
+              circlePositions[pattern[pattern.length - 1]] && (
+                <line
+                  x1={
+                    circlePositions[pattern[pattern.length - 1]].x -
+                    gridRef.current.getBoundingClientRect().left
+                  }
+                  y1={
+                    circlePositions[pattern[pattern.length - 1]].y -
+                    gridRef.current.getBoundingClientRect().top
+                  }
+                  x2={
+                    currentPos.x -
+                    gridRef.current.getBoundingClientRect().left
+                  }
+                  y2={
+                    currentPos.y -
+                    gridRef.current.getBoundingClientRect().top
+                  }
+                  stroke="#3a6ea5"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeOpacity="0.6"
+                />
+              )}
           </svg>
 
           {Array.from({ length: 9 }, (_, index) => (
@@ -684,15 +748,14 @@ function PatternLockScreen({ onSuccess }) {
               }}
               onMouseEnter={() => !isVerifying && handleCircleEnter(index)}
               onMouseUp={() => !isVerifying && setIsMouseDown(false)}
-              // Touch events for mobile
               onTouchStart={(e) => {
                 if (!isVerifying) {
                   setIsMouseDown(true);
                   setPattern([index]);
                   if (e.touches && e.touches[0]) {
-                    setCurrentPos({ 
-                      x: e.touches[0].clientX, 
-                      y: e.touches[0].clientY 
+                    setCurrentPos({
+                      x: e.touches[0].clientX,
+                      y: e.touches[0].clientY,
                     });
                   }
                 }
@@ -703,15 +766,17 @@ function PatternLockScreen({ onSuccess }) {
                 height: "60px",
                 borderRadius: "50%",
                 border: "2px solid #444",
-                backgroundColor: pattern.includes(index) 
-                  ? "#3a6ea5" 
+                backgroundColor: pattern.includes(index)
+                  ? "#3a6ea5"
                   : "#252525",
                 cursor: isVerifying ? "default" : "pointer",
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
                 transition: "background-color 0.2s, transform 0.1s",
-                transform: pattern.includes(index) ? "scale(1.05)" : "scale(1)",
+                transform: pattern.includes(index)
+                  ? "scale(1.05)"
+                  : "scale(1)",
                 zIndex: 10,
                 position: "relative",
                 opacity: isVerifying ? 0.7 : 1,
@@ -730,13 +795,15 @@ function PatternLockScreen({ onSuccess }) {
             </div>
           ))}
         </div>
-        
+
         {error && (
-          <div style={{ color: "#ff5555", marginTop: "20px", fontSize: "14px" }}>
+          <div
+            style={{ color: "#ff5555", marginTop: "20px", fontSize: "14px" }}
+          >
             {error}
           </div>
         )}
-        
+
         <button
           onClick={() => {
             if (!isVerifying) {
@@ -757,8 +824,12 @@ function PatternLockScreen({ onSuccess }) {
             transition: "background-color 0.2s",
             opacity: isVerifying ? 0.7 : 1,
           }}
-          onMouseOver={(e) => !isVerifying && (e.target.style.backgroundColor = "#252525")}
-          onMouseOut={(e) => !isVerifying && (e.target.style.backgroundColor = "transparent")}
+          onMouseOver={(e) =>
+            !isVerifying && (e.target.style.backgroundColor = "#252525")
+          }
+          onMouseOut={(e) =>
+            !isVerifying && (e.target.style.backgroundColor = "transparent")
+          }
         >
           Reset
         </button>
@@ -772,142 +843,86 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showPatternLock, setShowPatternLock] = useState(false);
   const [showCreateAccount, setShowCreateAccount] = useState(false);
-  const [showDownloadInstructions, setShowDownloadInstructions] = useState(false);
+  const [showDownloadInstructions, setShowDownloadInstructions] =
+    useState(false);
   const [patternResetRequired, setPatternResetRequired] = useState(false);
 
-  if (patternResetRequired) {
-  return <PatternResetScreen onBackToLogin={handleBackToLogin} />;
-}
-
-  // Check if user is already logged in from a previous session
+  // Check if there's a user in sessionStorage at startup
   useEffect(() => {
     const storedUser = sessionStorage.getItem("currentUser");
     if (storedUser) {
-      // We have a user in session storage, but we'll still require pattern verification
-      setShowPatternLock(true);
+      checkIfPatternResetOrAllZeros(storedUser);
     }
   }, []);
 
-  // Called by the Login form when username/password check is successful
-  const handleLoginSuccess = async () => {
-  const username = sessionStorage.getItem("currentUser");
-
-  try {
-    // Call your new endpoint
-    const response = await fetch(`${API_BASE_URL}/check-pattern-expired/${username}`);
-    const data = await response.json();
-
-    if (response.ok) {
-      if (data.expired) {
-        // If the server says pattern is expired, we show the reset screen
+  // -------------------------------
+  // HELPER: check if pattern is all zeros or expired
+  // -------------------------------
+  const checkIfPatternResetOrAllZeros = async (username) => {
+    try {
+      // 1) Fetch user details to see if pattern is all zeros
+      const userResponse = await fetch(`${API_BASE_URL}/user/${username}`);
+      const userData = await userResponse.json();
+  
+      // If the pattern is [0,0,0,0,0,0,0,0,0], force them to reset
+      if (
+        userData.pattern &&
+        userData.pattern.length === 9 &&
+        userData.pattern.every((val) => val === 0)
+      ) {
         setPatternResetRequired(true);
       } else {
-        // Otherwise, proceed to the pattern lock screen (or whichever flow you prefer)
+        // Otherwise, show the pattern lock
         setShowPatternLock(true);
       }
-    } else {
-      // If an error is returned, fallback to pattern lock or show an error
-      console.error("Error from /check-pattern-expired:", data);
+    } catch (error) {
+      console.error("Error checking pattern or reset status:", error);
+      // If there’s an error, default to showing the pattern lock
       setShowPatternLock(true);
     }
-  } catch (error) {
-    console.error("Network error calling /check-pattern-expired:", error);
-    // Fallback if something goes wrong
-    setShowPatternLock(true);
-  }
-};
+  };
 
+  // Called when login is successful on the server
+  const handleLoginSuccess = async () => {
+    const username = sessionStorage.getItem("currentUser");
+    await checkIfPatternResetOrAllZeros(username);
+  };
 
-  
-  // const handleLoginSuccess = async () => {
-  //   const username = sessionStorage.getItem("currentUser");
-    
-  //   try {
-  //     const response = await fetch(`${API_BASE_URL}/last-update/${username}`);
-  //     const data = await response.json();
-      
-  //     if (response.ok) {
-  //       const lastUpdate = new Date(data.last_pattern_update);
-  //       // Use minutes instead of days for testing
-  //       const minutesDifference = Math.floor((new Date() - lastUpdate) / (1000 * 60));
-  //       if (minutesDifference >= 1) { // 1 minute instead of 7 days
-  //         setPatternResetRequired(true);
-  //       } else {
-  //         setShowPatternLock(true);
-  //       }
-  //     } else {
-  //       setShowPatternLock(true);
-  //     }
-  //   } 
-  //   catch (error) {
-  //     console.error("Error checking pattern reset status:", error);
-  //     setShowPatternLock(true);
-  //   }
-  // };
-  // const handleLoginSuccess = async () => {
-  //   const username = sessionStorage.getItem("currentUser");
-    
-  //   try {
-  //     // Check if the pattern needs to be reset
-  //     const response = await fetch(`${API_BASE_URL}/last-update/${username}`);
-  //     const data = await response.json();
-      
-  //     if (response.ok) {
-  //       const lastUpdate = new Date(data.last_pattern_update);
-  //       const today = new Date();
-  //       const daysDifference = Math.floor((today - lastUpdate) / (1000 * 60 * 60 * 24));
-  //       if (daysDifference >= 7) {
-  //         setPatternResetRequired(true);
-  //       } else {
-  //         setShowPatternLock(true);
-  //       }
-  //     } else {
-  //       setShowPatternLock(true);
-  //     }
-  //   } 
-  //   catch (error) {
-  //     console.error("Error checking pattern reset status:", error);
-  //     setShowPatternLock(true);
-  //   }
-  // };
-
-  // Called when user wants to create a new account
   const handleCreateAccount = () => {
     setShowCreateAccount(true);
   };
 
-  // Called when a new account is created
   const handleAccountCreated = () => {
     setShowCreateAccount(false);
-    setShowDownloadInstructions(true); // New users go to download instructions
+    setShowDownloadInstructions(true);
   };
 
-  // Called by the PatternLockScreen when the pattern is correct
+  // If pattern is verified successfully
   const handlePatternSuccess = () => {
     setIsLoggedIn(true);
     setShowPatternLock(false);
   };
 
-  // Called when user confirms they've downloaded the app
   const handleDownloadComplete = () => {
-    setShowPatternLock(true); // After download instructions, go to pattern setup
+    setShowPatternLock(true);
     setShowDownloadInstructions(false);
   };
 
-  // Log out function
   const handleLogout = () => {
     sessionStorage.removeItem("currentUser");
     setIsLoggedIn(false);
     setShowPatternLock(false);
     setShowCreateAccount(false);
     setShowDownloadInstructions(false);
+    setPatternResetRequired(false);
   };
 
   const handleBackToLogin = () => {
     sessionStorage.removeItem("currentUser");
     setPatternResetRequired(false);
   };
-  // If fully logged in, show success screen
+
+  // If fully logged in, show success
   if (isLoggedIn) {
     return (
       <div
@@ -980,11 +995,41 @@ function App() {
             onMouseOver={(e) => (e.target.style.backgroundColor = "#457ab8")}
             onMouseOut={(e) => (e.target.style.backgroundColor = "#3a6ea5")}
           >
-            Logout
+            Log Out
           </button>
         </div>
       </div>
     );
+  }
+
+  // If pattern was forcibly reset or is all zeros, show reset screen
+  if (patternResetRequired) {
+    return (
+      <PatternResetScreen
+        username={sessionStorage.getItem("currentUser")}
+        onResetSuccess={() => {
+          setPatternResetRequired(false);
+          setShowPatternLock(true);
+        }}
+        onBackToLogin={handleBackToLogin}
+        apiBaseUrl={API_BASE_URL}
+      />
+    );
+  }
+
+  // Show pattern lock for existing users
+  if (showPatternLock) {
+    return (
+      <PatternLockScreen
+        onSuccess={handlePatternSuccess}
+        onResetPatternRequested={() => setPatternResetRequired(true)}
+      />
+    );
+  }
+
+  // Show download instructions after account creation
+  if (showDownloadInstructions) {
+    return <DownloadInstructionsScreen onProceed={handleDownloadComplete} />;
   }
 
   // Show create account form
@@ -992,19 +1037,13 @@ function App() {
     return <CreateAccountForm onAccountCreated={handleAccountCreated} />;
   }
 
-
-  // Show download instructions after account creation
-  if (showDownloadInstructions) {
-    return <DownloadInstructionsScreen onProceed={handleDownloadComplete} />;
-  }
-
-  // Show pattern lock for existing users
-  if (showPatternLock) {
-    return <PatternLockScreen onSuccess={handlePatternSuccess} />;
-  }
-
-  // Show login form as the default screen
-  return <LoginForm onLoginSuccess={handleLoginSuccess} onCreateAccount={handleCreateAccount} />;
+  // Otherwise, default to the login form
+  return (
+    <LoginForm
+      onLoginSuccess={handleLoginSuccess}
+      onCreateAccount={handleCreateAccount}
+    />
+  );
 }
 
 export default App;
