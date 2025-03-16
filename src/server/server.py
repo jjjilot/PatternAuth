@@ -81,26 +81,6 @@ def has_expired(last_update: str) -> bool:
     last_update_dt = datetime.strptime(last_update, "%Y-%m-%d %H:%M:%S")
     return datetime.now() - last_update_dt > timedelta(minutes=2) #Changeed this
 
-
-@app.get("/check-pattern-expired/{username}")
-def check_pattern_expired(username: str):
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT last_pattern_update FROM users WHERE username = ?",
-            (username,)
-        )
-        row = cursor.fetchone()
-        if not row:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        last_update = row["last_pattern_update"]  # from the DB
-    
-    if has_expired(last_update):
-        return {"expired": True}
-    else:
-        return {"expired": False}
-
 @app.post("/add-user/")
 def add_user(user: UserCreate):
     with get_db_connection() as conn:
