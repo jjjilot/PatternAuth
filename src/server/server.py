@@ -247,8 +247,7 @@ def get_db_connection():
 class UserCreate(BaseModel):
     username: str
     password: str
-    # For brand-new users, you can ignore 'pattern' on the phone side
-    # or pass an empty list, because the server sets it to all zero by default.
+    # For brand-new users, we ignore 'pattern' on the phone side or pass an empty list.
     pattern: list[int] = []
 
 class UserLogin(BaseModel):
@@ -285,11 +284,9 @@ def decrypt_pattern(encrypted_pattern: str) -> list[int]:
 
 def has_expired(last_update: str) -> bool:
     if not last_update:
-        # If the user has never updated the pattern, consider them "new"
-        # or you can decide to treat it as expired. It's up to you.
-        return False  # For brand-new user, let's not force expiration.
+        return False  # For brand-new user, treat them as "not expired" yet
     last_update_dt = datetime.strptime(last_update, "%Y-%m-%d %H:%M:%S")
-    return (datetime.now() - last_update_dt) > timedelta(minutes=2)
+    return (datetime.now() - last_update_dt) > timedelta(days=7)
 
 # ------------------------------------------------------------------------
 # ROUTES
@@ -305,14 +302,13 @@ def add_user(user: UserCreate):
       - hashed password
       - default pattern of all zeros (9-length)
       - status = False initially
-      - last_pattern_update = now (so they won't be forced expired immediately)
+      - last_pattern_update = now (so they're not forced expired)
     """
     with get_db_connection() as conn:
         cursor = conn.cursor()
         try:
             hashed_password = hash_password(user.password)
-            # For brand-new users, store an all-zero pattern so the phone knows to set a new one.
-            default_pattern = encrypt_pattern([0,0,0,0,0,0,0,0,0])
+            default_pattern = encrypt_pattern([0,0,0,0,0,0,0,0,0])  # 9 zeros
             last_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             cursor.execute(
@@ -325,6 +321,7 @@ def add_user(user: UserCreate):
             conn.commit()
         except sqlite3.IntegrityError:
             raise HTTPException(status_code=400, detail="Username already exists")
+
     return {"message": "User added successfully"}
 
 # ----------------------
@@ -336,7 +333,7 @@ def get_user(username: str):
     Returns:
       - password (hashed)
       - decrypted pattern
-      - status (as bool)
+      - status (bool)
     
     If 7 days have passed, sets user.status = False (but does not overwrite pattern).
     """
@@ -355,6 +352,7 @@ def get_user(username: str):
             raise HTTPException(status_code=404, detail="User not found")
 
         last_update = user["last_pattern_update"]
+
         if has_expired(last_update):
             # Mark as expired in DB by setting status to False
             cursor.execute(
@@ -385,14 +383,15 @@ def get_user(username: str):
 def login(user: UserLogin):
     """
     Validates username/password. If more than 7 days since last pattern update, 
-    sets status=False. Otherwise, user remains with same status.
+    sets status = False. Otherwise, user remains with same status.
     """
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             """
-            SELECT password, last_pattern_update 
-            FROM users WHERE username = ?
+            SELECT password, last_pattern_update
+            FROM users
+            WHERE username = ?
             """,
             (user.username,),
         )
@@ -431,7 +430,9 @@ def verify_pattern(request: PatternVerifyRequest):
         cursor = conn.cursor()
         cursor.execute(
             """
-            SELECT pattern FROM users WHERE username = ?
+            SELECT pattern
+            FROM users
+            WHERE username = ?
             """,
             (request.username,),
         )
@@ -453,15 +454,15 @@ def verify_pattern(request: PatternVerifyRequest):
 def update_pattern(request: PatternUpdateRequest):
     """
     If a user wants to set or change their pattern.
-    - If they have never set a pattern, the current would be all zeros (for new user).
-    - If they do have a pattern, we ensure it's not the same as the old one.
-    - We then update the pattern and last_pattern_update to now.
+    - If the user is brand new, their pattern might be [0..0].
+    - If the pattern is the same as the old one, error out.
+    - If successfully changed, set status = True and update last_pattern_update.
     """
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             """
-            SELECT pattern
+            SELECT pattern, status
             FROM users
             WHERE username = ?
             """,
@@ -473,21 +474,23 @@ def update_pattern(request: PatternUpdateRequest):
             raise HTTPException(status_code=404, detail="User not found")
 
         current_pattern = decrypt_pattern(db_user["pattern"])
-
-        # If the user is truly new, their current_pattern might be [0,0,0,0,0,0,0,0,0].
-        # If the pattern is identical, we throw an error:
+        # If new pattern is the same, that's an error
         if current_pattern == request.pattern:
             raise HTTPException(
-                status_code=400, detail="New pattern cannot be the same as the old pattern"
+                status_code=400,
+                detail="New pattern cannot be the same as the old pattern",
             )
 
+        # Encrypt new pattern
         encrypted_pattern = encrypt_pattern(request.pattern)
         new_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+        # IMPORTANT:
+        # set status = true (1) because user is now "valid" again
         cursor.execute(
             """
             UPDATE users
-            SET pattern = ?, last_pattern_update = ?
+            SET pattern = ?, last_pattern_update = ?, status = 1
             WHERE username = ?
             """,
             (encrypted_pattern, new_timestamp, request.username),
@@ -523,3 +526,4 @@ def get_last_update(username: str):
         "username": username,
         "last_pattern_update": user["last_pattern_update"]
     }
+
