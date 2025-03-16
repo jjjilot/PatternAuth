@@ -79,7 +79,28 @@ def has_expired(last_update: str) -> bool:
     if not last_update:
         return True  # If no date exists, force reset
     last_update_dt = datetime.strptime(last_update, "%Y-%m-%d %H:%M:%S")
-    return datetime.now() - last_update_dt > timedelta(minutes=2)
+    return datetime.now() - last_update_dt > timedelta(minutes=2) #Changeed this
+
+
+@app.get("/check-pattern-expired/{username}")
+def check_pattern_expired(username: str):
+    # 1) Lookup the user's last_update from your database
+    # (Here we’re just simulating a DB fetch, but you'd do something like:
+    #    user = db.query(UserModel).filter_by(username=username).first())
+    #    if user is None:
+    #        raise HTTPException(status_code=404, detail="User not found")
+    #
+    #    last_update = user.last_pattern_update.strftime("%Y-%m-%d %H:%M:%S")
+    
+    # For the sake of example, let's simulate a date string we got from the DB:
+    # (In production, you'd retrieve user.last_pattern_update from your DB.)
+    last_update = "2023-02-01 10:15:00"  # A placeholder example
+
+    # 2) Use your existing has_expired function
+    if has_expired(last_update):
+        return {"expired": True}
+    else:
+        return {"expired": False}
 
 @app.post("/add-user/")
 def add_user(user: UserCreate):
