@@ -18,4 +18,4 @@ src/website
 npm install # (only for first time running website)
 npm start
 ```
-The second installation can be found by navigating to src/ios_app. This directory contains a directory with the iOS app source code and a README. To install the Ios app on your phone, you must have access to an Ios device and have downloaded Xcode onto your machine, which requires a MacOS machine. To install the PatternAuth app, connect your Ios device to your machine (through wired connection) and follow the directions in the ios_app README.
+The second installation can be found by navigating to src/ios_app. This directory contains a directory with the iOS app source code and a README. To install the iOS app on your phone, you must have access to an iOS device and have downloaded Xcode onto your machine, which requires a MacOS machine. To install the PatternAuth app, connect your Ios device to your machine (through wired connection) and follow the directions in the ios_app README.
